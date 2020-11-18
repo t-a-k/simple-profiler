@@ -1,0 +1,43 @@
+srcdir	= @srcdir@
+builddir = @builddir@
+VPATH	= @srcdir@
+
+EMPTY	:=
+COMMA	:= ,
+SPACE	:= $(EMPTY) $(EMPTY)
+
+CC	= @CC@
+CFLAGS	= @CFLAGS@
+DEFS	= @DEFS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS	= $(addprefix --version-script=,$(filter %.ver,$^))
+CCLDFLAGS = @LDFLAGS@
+CCLDFLAGS += -rdynamic $(addprefix -Wl$(COMMA),$(LDFLAGS))
+LIBS	= @LIBS@
+CCLD	= $(CC)
+
+all: simpleprof.so
+
+simpleprof.so: simpleprof.o eprintf.o simpleprof.ver
+
+%.so: %.o %.ver
+	$(CCLD) $(CCLDFLAGS) -o $@ $(filter-out %.ver,$^) $(LIBS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEFS) -o $@ -c $<
+
+Makefile: Makefile.in
+
+%: %.in ./config.status
+	./config.status $@
+
+config.status: $(srcdir)/configure
+	./config.status --recheck
+
+$(srcdir)/configure: $(srcdir)/configure.ac
+	cd '$(srcdir)' && autoconf
+
+clean:
+	rm -f *.o *.so *.d
+
+.PHONY: all clean
