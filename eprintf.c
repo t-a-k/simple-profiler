@@ -279,7 +279,14 @@ veprintf (const char *const tag, const char *fmt, va_list arg)
 	    lval = va_arg(arg, int);
 	  if (lval < 0)
 	    {
-	      ulval = -lval;
+	      /*
+	       * "-lval" (simply negating lval) invokes undefined behavior
+	       * due to signed integer overflow when lval is LONG_MIN.
+	       * Avoid this situation by casting to unsigned integer type
+	       * at first, because conversion to unsigned integer type and
+	       * unary minus of unsigned integer type are both well-defined.
+	       */
+	      ulval = -(unsigned long)lval;
 	      flags |= NEGATIVE;
 	    }
 	  else
